@@ -3,6 +3,19 @@ import { render } from 'vitest-browser-svelte'
 import Title from './Title.svelte'
 import { titleParts, titleSeparator, resetLevelCounter } from '../stores/title.js'
 
+async function waitForTitle(expectedTitle: string, timeout = 1000) {
+	const startTime = Date.now()
+	while (Date.now() - startTime < timeout) {
+		if (document.title === expectedTitle) {
+			return
+		}
+		// Wait a short moment before checking again
+		await new Promise(resolve => setTimeout(resolve, 10))
+	}
+	// If the loop finishes, the title never matched
+	throw new Error(`Timeout: document.title did not become "${expectedTitle}"`)
+}
+
 describe('Title Component', () => {
 	let cleanupFunctions: (() => void)[] = []
 
@@ -33,8 +46,8 @@ describe('Title Component', () => {
 			page.unmount?.()
 		})
 
-		// Wait for Svelte effects to complete
-		await new Promise(resolve => setTimeout(resolve, 200))
+		// Wait for title to update
+		await waitForTitle('Page • Root')
 
 		const titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Page • Root')
@@ -49,8 +62,8 @@ describe('Title Component', () => {
 			page.unmount?.()
 		})
 
-		// Wait for Svelte effects to complete
-		await new Promise(resolve => setTimeout(resolve, 200))
+		// Wait for title to update
+		await waitForTitle('Page | Root')
 
 		const titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Page | Root')
@@ -67,8 +80,8 @@ describe('Title Component', () => {
 			page.unmount?.()
 		})
 
-		// Wait for Svelte effects to complete
-		await new Promise(resolve => setTimeout(resolve, 200))
+		// Wait for title to update
+		await waitForTitle('Page → Section → Root')
 
 		const titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Page → Section → Root')
@@ -83,8 +96,8 @@ describe('Title Component', () => {
 			override.unmount?.()
 		})
 
-		// Wait for Svelte effects to complete  
-		await new Promise(resolve => setTimeout(resolve, 200))
+		// Wait for title to update
+		await waitForTitle('Override Title')
 
 		const titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Override Title')
@@ -102,8 +115,8 @@ describe('Title Component', () => {
 			auto3.unmount?.()
 		})
 
-		// Wait for effects
-		await new Promise(resolve => setTimeout(resolve, 200))
+		// Wait for title to update
+		await waitForTitle('Auto3 • Auto2 • Auto1')
 
 		const titleElement = document.querySelector('title')
 		// The title should show the automatic hierarchy
@@ -115,7 +128,7 @@ describe('Title Component', () => {
 		const root = render(Title, { title: 'Root', level: 0, separator: ' • ' })
 		const page = render(Title, { title: 'Page', level: 1 })
 		
-		await new Promise(resolve => setTimeout(resolve, 200))
+		await waitForTitle('Page • Root')
 		
 		let titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Page • Root')
@@ -129,7 +142,7 @@ describe('Title Component', () => {
 			page.unmount?.()
 		})
 		
-		await new Promise(resolve => setTimeout(resolve, 200))
+		await waitForTitle('Page 🔹 Root')
 		
 		titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Page 🔹 Root')
@@ -144,7 +157,7 @@ describe('Title Component', () => {
 			page.unmount?.()
 		})
 
-		await new Promise(resolve => setTimeout(resolve, 200))
+		await waitForTitle('Page')
 
 		const titleElement = document.querySelector('title')
 		// Should handle empty title gracefully
@@ -155,7 +168,7 @@ describe('Title Component', () => {
 		const root = render(Title, { title: 'Root', level: 0 })
 		const page = render(Title, { title: 'Page', level: 1 })
 		
-		await new Promise(resolve => setTimeout(resolve, 200))
+		await waitForTitle('Page • Root')
 		
 		// Verify initial state
 		let titleElement = document.querySelector('title')
@@ -163,7 +176,7 @@ describe('Title Component', () => {
 		
 		// Unmount page component
 		page.unmount?.()
-		await new Promise(resolve => setTimeout(resolve, 200))
+		await waitForTitle('Root')
 		
 		// Should only show root now
 		titleElement = document.querySelector('title')
@@ -184,7 +197,7 @@ describe('Title Component', () => {
 			page.unmount?.()
 		})
 
-		await new Promise(resolve => setTimeout(resolve, 200))
+		await waitForTitle('Page • Root')
 
 		const titleElement = document.querySelector('title')
 		// Should use root separator, not page separator
@@ -203,6 +216,7 @@ describe('Title Component', () => {
 			page.unmount?.()
 		})
 
+		// Wait for title to update - this is a complex case with multiple roots
 		await new Promise(resolve => setTimeout(resolve, 200))
 
 		const titleElement = document.querySelector('title')
@@ -216,7 +230,7 @@ describe('Title Component', () => {
 		const routeA_root = render(Title, { title: 'Home' })     // Should get level 0
 		const routeA_page = render(Title, { title: 'Dashboard' }) // Should get level 1
 		
-		await new Promise(resolve => setTimeout(resolve, 200))
+		await waitForTitle('Dashboard • Home')
 		
 		let titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Dashboard • Home')
@@ -232,7 +246,7 @@ describe('Title Component', () => {
 		const routeB_root = render(Title, { title: 'Settings' })  // Should get level 0 again
 		const routeB_page = render(Title, { title: 'Profile' })   // Should get level 1 again
 		
-		await new Promise(resolve => setTimeout(resolve, 200))
+		await waitForTitle('Profile • Settings')
 		
 		titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Profile • Settings')
@@ -253,7 +267,7 @@ describe('Title Component', () => {
 			backA_page.unmount?.()
 		})
 		
-		await new Promise(resolve => setTimeout(resolve, 200))
+		await waitForTitle('Dashboard • Home')
 		
 		titleElement = document.querySelector('title')
 		// Should be identical to original Route A
