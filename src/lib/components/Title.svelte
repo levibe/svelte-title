@@ -46,9 +46,7 @@
 	$effect(() => {
 		if (title) {
 			if (override) {
-				// Override mode: set complete title, clear all other parts
-				titleParts.set([])
-				// Use override level for standalone titles
+				// Override mode: use override level, other parts remain for restoration
 				setTitlePart(OVERRIDE_LEVEL, title)
 			} else {
 				// Normal cascading mode: set title at appropriate hierarchy level

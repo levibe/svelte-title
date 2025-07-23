@@ -225,6 +225,60 @@ describe('Title Component', () => {
 		expect(titleElement?.textContent).toContain('|') // Should use second separator
 	})
 
+	it('should revert title after override is removed', async () => {
+		// Render Root + Page first to establish cascaded title
+		const root = render(Title, { title: 'Root', level: 0 })
+		const page = render(Title, { title: 'Page', level: 1 })
+		
+		// Verify initial cascaded title
+		await waitForTitle('Page • Root')
+		let titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Page • Root')
+		
+		// Add override component - should take precedence
+		const override = render(Title, { title: 'Override Title', override: true })
+		
+		// Should show override title
+		await waitForTitle('Override Title')
+		titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Override Title')
+		
+		// Remove override component - should restore cascaded title
+		override.unmount?.()
+		
+		// Should revert to original cascaded title
+		await waitForTitle('Page • Root')
+		titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Page • Root')
+		
+		cleanupFunctions.push(() => {
+			root.unmount?.()
+			page.unmount?.()
+		})
+	})
+
+	it('should update title reactively when prop changes', async () => {
+		// Render initial component
+		const component = render(Title, { title: 'Initial Title', level: 0 })
+		
+		// Verify initial title
+		await waitForTitle('Initial Title')
+		let titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Initial Title')
+		
+		// Update props using rerender method - test true reactivity
+		await component.rerender({ title: 'Updated Title' })
+		
+		// Verify title updates reactively
+		await waitForTitle('Updated Title')
+		titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Updated Title')
+		
+		cleanupFunctions.push(() => {
+			component.unmount?.()
+		})
+	})
+
 	it('should handle route navigation with level counter reset', async () => {
 		// Simulate Route A: render components with automatic levels
 		const routeA_root = render(Title, { title: 'Home' })     // Should get level 0
