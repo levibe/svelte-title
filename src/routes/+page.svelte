@@ -1,5 +1,5 @@
 <script>
-	import { Title } from '$lib'
+	import { Title } from '../lib/index.js'
 </script>
 
 <Title title="Demo Page" level={1} />
