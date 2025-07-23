@@ -58,7 +58,7 @@ Want something other than the default bullet (` • `)? Pass a `separator` prop 
 <Title title="My App" separator=" | " />
 ```
 
-Now all your titles will use arrows:
+Now all your titles will use pipes:
 
 ```svelte
 <Title title="Settings" />
@@ -70,7 +70,7 @@ Now all your titles will use arrows:
 The `<Title>` component takes these props:
 
 - `title` (required) - The title text
-- `separator` (optional) - Custom separator, only works on root layout
+- `separator` (optional) - Custom separator (root layout only)
 - `override` (optional) - Show only this title, no cascading
 - `level` (optional) - Force a specific hierarchy level  
 
