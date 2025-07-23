@@ -49,11 +49,28 @@ Nested layouts work too:
 <!-- Result: "Users • Admin • My App" -->
 ```
 
+## Custom Separators
+
+Want something other than the default bullet (` • `)? Pass a `separator` prop to your root layout:
+
+```svelte
+<!-- src/routes/+layout.svelte -->
+<Title title="My App" separator=" | " />
+```
+
+Now all your titles will use arrows:
+
+```svelte
+<Title title="Settings" />
+<!-- Result: "Settings | My App" -->
+```
+
 ## Options
 
 The `<Title>` component takes these props:
 
 - `title` (required) - The title text
+- `separator` (optional) - Custom separator, only works on root layout
 - `override` (optional) - Show only this title, no cascading
 - `level` (optional) - Force a specific hierarchy level  
 
