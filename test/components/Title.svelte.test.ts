@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { render } from 'vitest-browser-svelte'
-import Title from './Title.svelte'
-import { titleParts, titleSeparator, resetLevelCounter } from '../stores/title.js'
+import Title from '../../src/lib/components/Title.svelte'
+import { titleParts, titleSeparator, resetLevelCounter } from '../../src/lib/stores/title.js'
 
 async function waitForTitle(expectedTitle: string, timeout = 1000) {
 	const startTime = Date.now()

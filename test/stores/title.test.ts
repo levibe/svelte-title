@@ -9,7 +9,7 @@ import {
 	setSeparator,
 	OVERRIDE_LEVEL,
 	resetLevelCounter 
-} from './title.js'
+} from '../../src/lib/stores/title.js'
 
 describe('Title Store', () => {
 	beforeEach(() => {
