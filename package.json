@@ -4,7 +4,10 @@
 	"description": "Simple SvelteKit component that automatically constructs hierarchical page titles",
 	"author": "Levi Bucsis",
 	"license": "MIT",
-	"repository": "github:levibe/svelte-title",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/levibe/svelte-title.git"
+	},
 	"homepage": "https://github.com/levibe/svelte-title",
 	"scripts": {
 		"dev": "vite dev",
