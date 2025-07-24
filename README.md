@@ -1,6 +1,6 @@
 # svelte-title
 
-Cascading page titles for SvelteKit. Build titles like "Settings • Admin • My App" automatically.
+Smart page title component for SvelteKit. Combines your titles into hierarchies like "Billing • Settings • App" based on route structure.
 
 ## Installation
 
@@ -24,7 +24,7 @@ First, set up your root layout:
   })
 </script>
 
-<Title title="My App" />
+<Title title="App" />
 ```
 
 Then add titles anywhere:
@@ -35,18 +35,18 @@ Then add titles anywhere:
 </script>
 
 <Title title="Dashboard" />
-<!-- Result: "Dashboard • My App" -->
+<!-- Result: "Dashboard • App" -->
 ```
 
 Nested layouts work too:
 
 ```svelte
-<!-- admin/+layout.svelte -->
-<Title title="Admin" />
+<!-- settings/+layout.svelte -->
+<Title title="Settings" />
 
-<!-- admin/users/+page.svelte -->
-<Title title="Users" />
-<!-- Result: "Users • Admin • My App" -->
+<!-- settings/billing/+page.svelte -->
+<Title title="Billing" />
+<!-- Result: "Billing • Settings • App" -->
 ```
 
 ## Custom Separators
@@ -55,14 +55,14 @@ Want something other than the default bullet (` • `)? Pass a `separator` prop 
 
 ```svelte
 <!-- src/routes/+layout.svelte -->
-<Title title="My App" separator=" | " />
+<Title title="App" separator=" | " />
 ```
 
 Now all your titles will use pipes:
 
 ```svelte
 <Title title="Settings" />
-<!-- Result: "Settings | My App" -->
+<!-- Result: "Settings | App" -->
 ```
 
 ## Options
