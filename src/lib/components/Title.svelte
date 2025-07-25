@@ -12,29 +12,29 @@
 
 	let { title, level, override = false, separator }: Props = $props()
 
-	// Re-assign level on route changes for automatic level assignment  
-	let hierarchyLevel = $state(0)
+	let hierarchyLevel = $state(level !== undefined ? level : getNextLevel())
+	
 	$effect(() => {
-		// Watch route changes to trigger re-assignment
+		// Reset level counter on route changes for consistent hierarchy
 		void page.url.pathname
-		hierarchyLevel = level !== undefined ? level : getNextLevel()
-	})
-
-	// Only level 0 (root layout) manages the final title rendering
-	let completeTitle = $state('')
-	const isRootLevel = $derived(hierarchyLevel === 0)
-	let currentSeparator = $state(' • ')
-
-	// Effect to handle separator changes (only at root level to avoid conflicts)
-	$effect(() => {
-		if (isRootLevel && separator !== undefined) {
-			setSeparator(separator)
+		if (level !== undefined) {
+			hierarchyLevel = level
 		}
 	})
 
-	// Subscribe to separator changes at root level
+	const isRootLevel = $derived(hierarchyLevel === 0)
+	
+	// SSR: All components render titles, last wins. CSR: Root builds cascaded title
+	let completeTitle = $state(title || '')
+	let currentSeparator = $state(' • ')
+
+	// Only root manages separator to avoid conflicts
 	$effect(() => {
 		if (isRootLevel) {
+			if (separator !== undefined) {
+				setSeparator(separator)
+			}
+			
 			const unsubscribe = titleSeparator.subscribe((sep: string) => {
 				currentSeparator = sep
 			})
@@ -42,20 +42,18 @@
 		}
 	})
 
-	// Reactive effect to update title when title prop or override changes
 	$effect(() => {
 		if (title) {
 			if (override) {
-				// Override mode: use override level, other parts remain for restoration
 				setTitlePart(OVERRIDE_LEVEL, title)
+				completeTitle = title // Override bypasses cascading
 			} else {
-				// Normal cascading mode: set title at appropriate hierarchy level
 				setTitlePart(hierarchyLevel, title)
 			}
 		}
 	})
 
-	// Only root level (level 0) subscribes to build final title
+	// Root rebuilds cascaded title reactively
 	$effect(() => {
 		if (isRootLevel) {
 			const unsubscribe = titleParts.subscribe((parts: { level: number, title: string }[]) => {
@@ -74,9 +72,6 @@
 	})
 </script>
 
-<!-- Only render title tag at root level, but always render when at root level -->
 <svelte:head>
-	{#if isRootLevel}
-		<title>{completeTitle}</title>
-	{/if}
+	<title>{completeTitle}</title>
 </svelte:head> 
