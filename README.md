@@ -85,10 +85,20 @@ The component automatically detects hierarchy based on render order. Root layout
 
 Don't put multiple `<Title>` components in the same file - use one per layout/page.
 
+## Limitations
+
+- **CSR-only mode**: Requires fallback `<title>` in `app.html` to prevent showing domain name during JS load
+- **SSR mode**: Static `<title>` tags in `app.html` will override the component's SSR-rendered titles
+- **Route changes**: Requires `resetLevelCounter()` in root layout for consistent automatic level assignment
+
 ## Requirements
 
 - SvelteKit 2.0+
 - Svelte 5.0+ (uses runes)
+
+## Issues & Feedback
+
+Found a bug or have a feature request? Please [open an issue](https://github.com/levibe/svelte-title/issues) on GitHub.
 
 ## License
 
