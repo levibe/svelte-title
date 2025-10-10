@@ -26,8 +26,8 @@ describe('Title Component SSR', () => {
 		expect(layoutResult.head).not.toContain('<title>undefined</title>')
 	})
 
-	it('should render fallback title during SSR even with multiple components', () => {
-		// Simulate layout component (level 0) - this renders first during SSR
+	it('should render title for all components during SSR', () => {
+		// Simulate layout component (level 0)
 		const layoutResult = render(Title, {
 			props: {
 				title: 'My App',
@@ -35,7 +35,7 @@ describe('Title Component SSR', () => {
 			}
 		})
 
-		// Simulate page component (level 1) - this renders after but can't update already-rendered <title>
+		// Simulate page component (level 1)
 		const pageResult = render(Title, {
 			props: {
 				title: 'Dashboard',
@@ -43,10 +43,8 @@ describe('Title Component SSR', () => {
 			}
 		})
 
-		// Layout should show its own title during SSR (meaningful fallback)
+		// Both should render title tags during SSR
 		expect(layoutResult.head).toContain('<title>My App</title>')
-		
-		// Page component now also renders title tag (last one wins during SSR)
 		expect(pageResult.head).toContain('<title>Dashboard</title>')
 	})
 
@@ -88,7 +86,7 @@ describe('Title Component SSR', () => {
 		expect(result.head).not.toContain('<title>undefined</title>')
 	})
 
-	it('should render title tag for all levels during SSR (last one wins)', () => {
+	it('should render title tag for all levels during SSR', () => {
 		const result = render(Title, {
 			props: {
 				title: 'Page Title',
@@ -96,7 +94,7 @@ describe('Title Component SSR', () => {
 			}
 		})
 
-		// All levels now render title tags during SSR (last one wins)
+		// All levels render title tags during SSR
 		expect(result.head).toContain('<title>Page Title</title>')
 	})
 })
