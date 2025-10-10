@@ -7,6 +7,11 @@ import { writable } from 'svelte/store'
 export const OVERRIDE_LEVEL = -1
 
 /**
+ * Default separator used for cascading titles.
+ */
+export const DEFAULT_SEPARATOR = ' • '
+
+/**
  * Represents a single part of the hierarchical title.
  */
 interface TitlePart {
@@ -33,13 +38,21 @@ export const titleParts = writable<TitlePart[]>([])
  * Store containing the current title separator.
  * Default: ' • '
  */
-export const titleSeparator = writable<string>(' • ')
+export const titleSeparator = writable<string>(DEFAULT_SEPARATOR)
 
 let renderCounter = 0
 
 /**
+ * Detects if we're running in SSR (server-side rendering) environment.
+ */
+function isSSR(): boolean {
+	return typeof document === 'undefined'
+}
+
+/**
  * Gets the next available hierarchy level.
  * Used for automatic level assignment based on render order.
+ * Automatically avoids collisions with explicitly-set levels.
  *
  * @returns The next level number (0, 1, 2, ...)
  *
@@ -48,7 +61,29 @@ let renderCounter = 0
  * const level2 = getNextLevel() // 1
  */
 export function getNextLevel(): number {
+	// Find next available level that doesn't conflict with existing explicit levels
+	while (titlePartsMap.has(renderCounter)) {
+		renderCounter++
+	}
 	return renderCounter++
+}
+
+/**
+ * Clears all title state including parts, counter, and separator.
+ * Useful for SSR environments to ensure isolation between requests.
+ *
+ * @example
+ * // In SvelteKit hooks.server.ts
+ * export async function handle({ event, resolve }) {
+ *   clearTitleState()
+ *   return resolve(event)
+ * }
+ */
+export function clearTitleState() {
+	titlePartsMap.clear()
+	renderCounter = 0
+	titleParts.set([])
+	titleSeparator.set(DEFAULT_SEPARATOR) // Reset to default to prevent cross-request leaks
 }
 
 /**
@@ -57,6 +92,8 @@ export function getNextLevel(): number {
  * Finds the highest level currently in use and sets the counter to continue after it.
  * This ensures that components which persist across navigation (like root layouts)
  * retain their levels, while new page components get fresh, non-conflicting levels.
+ *
+ * In SSR environments, this also clears all title state to prevent cross-request leaks.
  *
  * Must be called on every route change for proper title cascading.
  *
@@ -71,6 +108,12 @@ export function getNextLevel(): number {
  * })
  */
 export function resetLevelCounter() {
+	// In SSR, clear all state to prevent cross-request leaks
+	if (isSSR()) {
+		clearTitleState()
+		return
+	}
+
 	// Find the highest level currently in use (excluding override level)
 	const levels = Array.from(titlePartsMap.keys()).filter(l => l !== OVERRIDE_LEVEL)
 	const maxLevel = levels.length > 0 ? Math.max(...levels) : -1
@@ -160,7 +203,7 @@ function isValidTitlePart(part: unknown): part is TitlePart {
  * - Invalid parts are filtered out
  *
  * @param parts - Array of title parts to combine
- * @param separator - The separator string (default: ' • ')
+ * @param separator - The separator string (default: DEFAULT_SEPARATOR)
  * @returns The combined title string
  * @throws {Error} If parts is not an array
  *
@@ -173,7 +216,7 @@ function isValidTitlePart(part: unknown): part is TitlePart {
  * buildTitle(parts) // "Profile • Settings • App"
  * buildTitle(parts, ' → ') // "Profile → Settings → App"
  */
-export function buildTitle(parts: TitlePart[], separator: string = ' • '): string {
+export function buildTitle(parts: TitlePart[], separator: string = DEFAULT_SEPARATOR): string {
 	// Validate input
 	if (!Array.isArray(parts)) {
 		throw new Error('buildTitle: parts must be an array')

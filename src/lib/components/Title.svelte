@@ -15,7 +15,7 @@
 	 * <!-- Result: "Settings • My App" -->
 	 * ```
 	 */
-	import { titleParts, titleSeparator, setTitlePart, removeTitlePart, buildTitle, getNextLevel, setSeparator, OVERRIDE_LEVEL } from '../stores/title.js'
+	import { titleParts, titleSeparator, setTitlePart, removeTitlePart, buildTitle, getNextLevel, setSeparator, OVERRIDE_LEVEL, DEFAULT_SEPARATOR } from '../stores/title.js'
 	import { onDestroy } from 'svelte'
 
 	interface Props {
@@ -65,7 +65,8 @@
 
 	// SSR: All components render titles, last wins. CSR: Root builds cascaded title
 	let completeTitle = $state(title || '')
-	let currentSeparator = $state(' • ')
+	let currentSeparator = $state(DEFAULT_SEPARATOR)
+	let previousOverride = $state(override)
 
 	// Only root manages separator to avoid conflicts
 	$effect(() => {
@@ -82,7 +83,29 @@
 	})
 
 	$effect(() => {
-		if (title) {
+		// Handle override mode transitions
+		if (previousOverride !== override) {
+			if (previousOverride) {
+				// Switching from override to normal: remove override entry
+				removeTitlePart(OVERRIDE_LEVEL)
+			} else {
+				// Switching from normal to override: remove normal entry
+				removeTitlePart(hierarchyLevel)
+			}
+			previousOverride = override
+		}
+
+		// Update or remove title based on value
+		// Empty strings remove the title part (allows clearing)
+		if (title === '') {
+			if (override) {
+				removeTitlePart(OVERRIDE_LEVEL)
+				completeTitle = ''
+			} else {
+				removeTitlePart(hierarchyLevel)
+			}
+		} else {
+			// Set non-empty title
 			if (override) {
 				setTitlePart(OVERRIDE_LEVEL, title)
 				completeTitle = title // Override bypasses cascading
