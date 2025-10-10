@@ -1,6 +1,6 @@
 # svelte-title
 
-Smart page title component for SvelteKit. Combines your titles into hierarchies like "Billing • Settings • App" based on route structure.
+Cascading page title manager for SvelteKit. It builds titles like "Page • Section • App" automatically as your layouts and pages render.
 
 ## Installation
 
@@ -26,6 +26,8 @@ First, set up your root layout:
 
 <Title title="App" />
 ```
+
+Call `resetLevelCounter()` when the URL changes so new titles slot into the right spot instead of reusing an old level.
 
 Then add titles anywhere:
 
@@ -65,6 +67,8 @@ Now all your titles will use pipes:
 <!-- Result: "Settings | App" -->
 ```
 
+Only the layout at level 0 (your root layout) should set `separator`. Nested titles inherit whatever the root provides.
+
 ## Options
 
 The `<Title>` component takes these props:
@@ -83,13 +87,34 @@ The `<Title>` component takes these props:
 
 The component automatically detects hierarchy based on render order. Root layouts get level 0, nested layouts get level 1+, and pages get the highest levels. Titles build from specific to general.
 
-Don't put multiple `<Title>` components in the same file - use one per layout/page.
+Don't put multiple `<Title>` components in the same file—use one per layout or page so each view renders the expected title order.
+
+### Other exports
+
+- `DEFAULT_SEPARATOR` - The default bullet separator, handy if you want to reuse it elsewhere
+- `clearTitleState()` - Clears every title and the separator; useful for SSR hooks or test setup
 
 ## Limitations
 
-- **CSR-only mode**: Requires fallback `<title>` in `app.html` to prevent showing domain name during JS load
-- **SSR mode**: Static `<title>` tags in `app.html` will override the component's SSR-rendered titles
-- **Route changes**: Requires `resetLevelCounter()` in root layout for consistent automatic level assignment
+- **When you build without SSR**: Add a fallback `<title>` in `app.html` so visitors never see just the domain while the app boots.
+- **When you use SSR**: Any hard-coded `<title>` tag inside `app.html` wins over the component’s SSR output, so keep that file blank or neutral.
+- **Route changes**: Keep the `resetLevelCounter()` effect in place so automatic levels keep producing the right cascade as users navigate.
+
+## SSR Notes
+
+- Keep `resetLevelCounter()` in your root layout effect (shown above) so every route change recalculates the title levels correctly.
+- If you handle SSR manually (most apps can skip this), clear the state for every request. For example:
+
+```ts
+// src/hooks.server.ts
+import type { Handle } from '@sveltejs/kit'
+import { clearTitleState } from 'svelte-title'
+
+export const handle: Handle = async ({ event, resolve }) => {
+	clearTitleState()
+	return resolve(event)
+}
+```
 
 ## Requirements
 

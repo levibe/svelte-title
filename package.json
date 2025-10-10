@@ -1,7 +1,7 @@
 {
 	"name": "svelte-title",
 	"version": "1.2.0",
-	"description": "Simple SvelteKit component that automatically constructs hierarchical page titles",
+	"description": "Cascading page-title manager for SvelteKit apps",
 	"author": "Levi Bucsis",
 	"license": "MIT",
 	"repository": {
