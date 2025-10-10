@@ -1,29 +1,68 @@
 <script lang="ts">
-	import { page } from '$app/state'
+	/**
+	 * @component Title
+	 *
+	 * Smart page title component for SvelteKit that automatically constructs
+	 * hierarchical page titles based on route structure and render order.
+	 *
+	 * @example
+	 * ```svelte
+	 * <!-- Root layout -->
+	 * <Title title="My App" />
+	 *
+	 * <!-- Nested page -->
+	 * <Title title="Settings" />
+	 * <!-- Result: "Settings • My App" -->
+	 * ```
+	 */
 	import { titleParts, titleSeparator, setTitlePart, removeTitlePart, buildTitle, getNextLevel, setSeparator, OVERRIDE_LEVEL } from '../stores/title.js'
 	import { onDestroy } from 'svelte'
 
 	interface Props {
+		/**
+		 * The title text for this hierarchy level.
+		 * @required
+		 */
 		title: string
+
+		/**
+		 * Optional explicit hierarchy level (0 = root, 1+ = nested).
+		 * If not provided, level is auto-assigned based on render order.
+		 * @default auto-assigned
+		 */
 		level?: number
+
+		/**
+		 * Override mode: shows only this title, bypassing cascading.
+		 * Useful for standalone pages like 404 or login.
+		 * @default false
+		 */
 		override?: boolean
+
+		/**
+		 * Custom separator for cascading titles.
+		 * Only applies when set on the root-level (level 0) component.
+		 * @default ' • '
+		 * @example ' | ', ' → ', ' - '
+		 */
 		separator?: string
 	}
 
 	let { title, level, override = false, separator }: Props = $props()
 
-	let hierarchyLevel = $state(level !== undefined ? level : getNextLevel())
-	
-	$effect(() => {
-		// Reset level counter on route changes for consistent hierarchy
-		void page.url.pathname
-		if (level !== undefined) {
-			hierarchyLevel = level
-		}
-	})
+	// Input validation
+	if (level !== undefined && level < 0 && level !== OVERRIDE_LEVEL) {
+		throw new Error(`Invalid level: ${level}. Level must be >= 0 or use override prop.`)
+	}
+	if (separator !== undefined && separator === '') {
+		throw new Error('Invalid separator: empty string is not allowed.')
+	}
+
+	// Assign level once during initialization
+	const hierarchyLevel = level !== undefined ? level : getNextLevel()
 
 	const isRootLevel = $derived(hierarchyLevel === 0)
-	
+
 	// SSR: All components render titles, last wins. CSR: Root builds cascaded title
 	let completeTitle = $state(title || '')
 	let currentSeparator = $state(' • ')
@@ -34,7 +73,7 @@
 			if (separator !== undefined) {
 				setSeparator(separator)
 			}
-			
+
 			const unsubscribe = titleSeparator.subscribe((sep: string) => {
 				currentSeparator = sep
 			})
