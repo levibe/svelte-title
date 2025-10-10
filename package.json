@@ -1,6 +1,6 @@
 {
 	"name": "svelte-title",
-	"version": "1.1.1",
+	"version": "1.2.0",
 	"description": "Simple SvelteKit component that automatically constructs hierarchical page titles",
 	"author": "Levi Bucsis",
 	"license": "MIT",
