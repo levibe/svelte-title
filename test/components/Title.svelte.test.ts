@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { render } from 'vitest-browser-svelte'
 import Title from '../../src/lib/components/Title.svelte'
-import { titleParts, titleSeparator, resetLevelCounter } from '../../src/lib/stores/title.js'
+import { titleParts, titleSeparator, resetLevelCounter, DEFAULT_SEPARATOR } from '../../src/lib/stores/title.js'
 
 async function waitForTitle(expectedTitle: string, timeout = 1000) {
 	const startTime = Date.now()
@@ -22,10 +22,10 @@ describe('Title Component', () => {
 	beforeEach(() => {
 		// Reset the title state before each test
 		titleParts.set([])
-		titleSeparator.set(' • ')
+		titleSeparator.set(DEFAULT_SEPARATOR)
 		resetLevelCounter()
 		cleanupFunctions = []
-		
+
 		// Clear any existing title elements
 		const existingTitles = document.querySelectorAll('title')
 		existingTitles.forEach(title => title.remove())
@@ -283,48 +283,139 @@ describe('Title Component', () => {
 		// Simulate Route A: render components with automatic levels
 		const routeA_root = render(Title, { title: 'Home' })     // Should get level 0
 		const routeA_page = render(Title, { title: 'Dashboard' }) // Should get level 1
-		
+
 		await waitForTitle('Dashboard • Home')
-		
+
 		let titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Dashboard • Home')
-		
+
 		// Clean up Route A components (simulate navigation away)
 		routeA_root.unmount?.()
 		routeA_page.unmount?.()
-		
+
 		// Reset level counter (as would happen in root layout on route change)
 		resetLevelCounter()
-		
+
 		// Simulate Route B: render different components
 		const routeB_root = render(Title, { title: 'Settings' })  // Should get level 0 again
 		const routeB_page = render(Title, { title: 'Profile' })   // Should get level 1 again
-		
+
 		await waitForTitle('Profile • Settings')
-		
+
 		titleElement = document.querySelector('title')
 		expect(titleElement?.textContent).toBe('Profile • Settings')
-		
+
 		// Clean up Route B
 		routeB_root.unmount?.()
 		routeB_page.unmount?.()
-		
-		// Reset counter again  
+
+		// Reset counter again
 		resetLevelCounter()
-		
+
 		// Simulate back to Route A: levels should reset properly
 		const backA_root = render(Title, { title: 'Home' })      // Should get level 0 again
 		const backA_page = render(Title, { title: 'Dashboard' }) // Should get level 1 again
-		
+
 		cleanupFunctions.push(() => {
 			backA_root.unmount?.()
 			backA_page.unmount?.()
 		})
-		
+
 		await waitForTitle('Dashboard • Home')
-		
+
 		titleElement = document.querySelector('title')
 		// Should be identical to original Route A
 		expect(titleElement?.textContent).toBe('Dashboard • Home')
+	})
+
+	it('should handle toggling override prop on same component instance', async () => {
+		// Render root and page components
+		const root = render(Title, { title: 'Root', level: 0 })
+		const page = render(Title, { title: 'Page', level: 1 })
+
+		// Verify initial cascaded title
+		await waitForTitle('Page • Root')
+		let titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Page • Root')
+
+		// Toggle override to true
+		await page.rerender({ title: 'Override Title', override: true })
+
+		// Should show override title only
+		await waitForTitle('Override Title')
+		titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Override Title')
+
+		// Toggle override back to false
+		await page.rerender({ title: 'Page', override: false })
+
+		// Should restore cascaded title
+		await waitForTitle('Page • Root')
+		titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Page • Root')
+
+		// Toggle override again to verify it works multiple times
+		await page.rerender({ title: 'Another Override', override: true })
+		await waitForTitle('Another Override')
+		titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Another Override')
+
+		cleanupFunctions.push(() => {
+			root.unmount?.()
+			page.unmount?.()
+		})
+	})
+
+	it('should handle updating title to empty string', async () => {
+		// Render root and page with initial titles
+		const root = render(Title, { title: 'Root', level: 0 })
+		const page = render(Title, { title: 'Dashboard', level: 1 })
+
+		// Verify initial title
+		await waitForTitle('Dashboard • Root')
+		let titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Dashboard • Root')
+
+		// Update page title to empty string
+		await page.rerender({ title: '' })
+
+		// Should show only root title (empty string removes the page level)
+		await waitForTitle('Root')
+		titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Root')
+
+		// Update back to non-empty
+		await page.rerender({ title: 'Settings' })
+		await waitForTitle('Settings • Root')
+		titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Settings • Root')
+
+		cleanupFunctions.push(() => {
+			root.unmount?.()
+			page.unmount?.()
+		})
+	})
+
+	it('should handle mixed explicit and auto-assigned levels without collision', async () => {
+		// Explicitly set level 0 for root
+		const root = render(Title, { title: 'Root', level: 0 })
+
+		// Auto-assign level for page (should get level 1, not 0)
+		const page = render(Title, { title: 'Page' })
+
+		// Auto-assign level for section (should get level 2)
+		const section = render(Title, { title: 'Section' })
+
+		// Verify hierarchical title with no collisions
+		await waitForTitle('Section • Page • Root')
+
+		const titleElement = document.querySelector('title')
+		expect(titleElement?.textContent).toBe('Section • Page • Root')
+
+		cleanupFunctions.push(() => {
+			root.unmount?.()
+			page.unmount?.()
+			section.unmount?.()
+		})
 	})
 })
