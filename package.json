@@ -1,6 +1,6 @@
 {
 	"name": "svelte-title",
-	"version": "1.2.1",
+	"version": "1.2.2",
 	"description": "SvelteKit component for automatic cascading page titles",
 	"author": "Levi Bucsis",
 	"license": "MIT",
